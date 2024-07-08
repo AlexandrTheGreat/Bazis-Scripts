@@ -1,15 +1,7 @@
 ﻿Model.forEachPanel(function(obj) {
 
-    if (obj.Name.indexOf("О", 0) > -1){
-    newName = "";
-    for (i = 0; i < obj.Name.length; i++){
-        if (obj.Name.charAt(i) == "О")
-            newName = newName + "о"
-        else
-            newName = newName + obj.Name.charAt(i);
-        }
-    obj.Name = newName;
-    }
+    if (obj.Name.indexOf("О", 0) > -1) 
+        obj.Name = obj.Name.toLowerCase();
 
     if (obj.IsContourRectangle)
         obj.Selected = false;
