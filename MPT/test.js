@@ -1,15 +1,22 @@
-var DVPOm2 = [];
-var index = 0;
-Model.forEachPanel(function(obj) {
-    if (obj.MaterialName.indexOf('ДВПО м2', 0) > -1 &&
-        obj.MaterialName.indexOf('Белый', 0) > -1 &&
-        (obj.ContourHeight > 800) && (obj.ContourWidth > 800))
-            DVPOm2.push(index);
-    index++;
-})
-
-//alert(DVPOm2);
-console.log(DVPOm2[0], Model.Objects[DVPOm2[i]].MaterialName);
-for(var i=0; i<DVPOm2.length; i++){
-    Model.Objects[DVPOm2[i]].Selected = true;
+Edit = NewFloatInput("Ввод числа");
+Edit.Value = 12;
+Edit.OnChange = function() {
+alert('Изменено число');
 }
+
+Btn1 = NewButtonInput("кнопка1");
+Btn1.OnChange = function() {
+alert('Нажата  кнопка1');
+}
+
+Btn2 = NewButtonInput("кнопка2");
+Btn2.OnChange = function() {
+alert('Нажата  кнопка2');
+};
+
+
+Action.OnClick = function() {
+alert('Щелчок в области модели ' + Action.MouseX + ' ' + Action.MouseY)
+};
+
+Action.Continue();
