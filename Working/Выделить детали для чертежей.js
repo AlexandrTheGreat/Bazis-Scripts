@@ -1,4 +1,6 @@
-﻿Model.forEachPanel(function(obj) {
+﻿var OversizeDVPOm2 = false;
+
+Model.forEachPanel(function(obj) {
 
     if (obj.Name.indexOf("О", 0) > -1) 
         obj.Name = obj.Name.toLowerCase();
@@ -39,12 +41,28 @@
     if (obj.MaterialName.substring(0, 10) == 'Столешница' ||
         obj.MaterialName.indexOf('(для приклейки)', 0) > -1)
         obj.Selected = true;
+    
+    if (obj.MaterialName.indexOf('ДВПО м2', 0) > -1 &&
+        obj.MaterialName.indexOf('Белый', 0) > -1 &&
+        (obj.ContourHeight > 800) && (obj.ContourWidth > 800))
+            OversizeDVPOm2 = true;
 
     //Выделение фурнитуры
     //if (obj.Selected) obj.FindConnectedFasteners(obj).forEach(furn => {
         //furn.Selected = true;
         //});
 });
+
+if (OversizeDVPOm2){
+    Model.Selected = false;
+    Model.forEachPanel(function(obj){
+        if (obj.MaterialName.indexOf('ДВПО м2', 0) > -1 &&
+        obj.MaterialName.indexOf('Белый', 0) > -1 &&
+        (obj.ContourHeight > 800) && (obj.ContourWidth > 800))
+            obj.Selected = true;
+    })
+    alert('Детали ДВПО м² Белый больше 800 мм');
+}
 
 SetCamera(p3dIsometric);  //8
 Action.Control.ViewAll();
