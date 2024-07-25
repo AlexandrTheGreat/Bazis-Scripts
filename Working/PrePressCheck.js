@@ -2,6 +2,12 @@
     system.writeTextFile('MaterialsNames.js', 'var MaterialsNames = [];');
 system.include('MaterialsNames.js')
 
+order = Action.ModelFilename;
+startIndex = order.lastIndexOf('\\\\') + 2;
+order = order.slice(startIndex, startIndex + 11);
+Article.OrderName = order;
+Article.Name = order;
+
 var OversizeDVPOm2 = false;
 var ModelMaterials =[];
 
@@ -77,6 +83,7 @@ if (OversizeDVPOm2){
                 obj.Selected = true;
         })
     }
+    alert('Детали ДВПО м² Белый больше 800 мм');
 };
 
 
@@ -109,12 +116,13 @@ if (ModelMaterials.length > 0){
         }
         Sorted.push(MaterialsNames[maxi], MaterialsNames[maxi+1]);
         MaterialsNames.splice(maxi, 2);
-
     }
+
     MaterialsNames = 'var MaterialsNames = [\n"' + Sorted.join('", \n"');
     system.writeTextFile('MaterialsNames.js', MaterialsNames + '"\n];');
 };
 
-Action.Continue();
+Action.Hint = 'Выделено деталей' + Model.SelectionCount;
 SetCamera(p3dIsometric);  //8
 Action.Control.ViewAll();
+Action.Continue();
