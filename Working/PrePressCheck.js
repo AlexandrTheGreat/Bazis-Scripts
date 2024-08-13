@@ -2,12 +2,6 @@
     system.writeTextFile('MaterialsNames.js', 'var MaterialsNames = [];');
 system.include('MaterialsNames.js')
 
-order = Action.ModelFilename;
-startIndex = order.lastIndexOf('\\\\') + 2;
-order = order.slice(startIndex, startIndex + 11);
-Article.OrderName = order;
-Article.Name = order;
-
 var OversizeDVPOm2 = false;
 var ModelMaterials =[];
 
@@ -57,9 +51,10 @@ Model.forEachPanel(function(obj) {
         obj.MaterialName.indexOf('метал', 0) > -1)
         obj.Selected = false;
 
-    if (obj.MaterialName.substring(0, 10) == 'Столешница' ||
+    if ((obj.MaterialName.substring(0, 10) == 'Столешница') ||
         obj.MaterialName.indexOf('(для приклейки)', 0) > -1)
-        obj.Selected = true;
+            if (obj.Name.toLowerCase().indexOf('остаток') == -1)
+                obj.Selected = true;
     
     if (obj.MaterialName.indexOf('ДВПО м2', 0) > -1 &&
         obj.MaterialName.indexOf('Белый', 0) > -1 &&
@@ -86,22 +81,30 @@ if (OversizeDVPOm2){
     alert('Детали ДВПО м² Белый больше 800 мм');
 };
 
-
+function isComposite(mtName){
+    if ((mtName.indexOf('(') > -1) && 
+       (mtName.indexOf('+') > (mtName.indexOf('('))) && 
+       (mtName.indexOf(')') > (mtName.indexOf('+')))) 
+        return true;
+    else
+        return false;
+};
 
 if (ModelMaterials.length > 0){
     
     ModelMaterials.forEach(function(name){
         if (name.indexOf('ЛДСП') > -1 || name.indexOf('Панель МДФ') > -1 ||
-        name.indexOf('ДВП') > -1 || name.indexOf('ХДФ') > -1 ){
-            if (name.indexOf('\r')>-1) 
-                name = name.replace('\r', ' ');
-            index = MaterialsNames.indexOf(name);
-            if (index == -1){
-                MaterialsNames.push(name, 1);
-            } else
-                if (Number(MaterialsNames[index+1]) > 0)
-                    MaterialsNames[index+1] = Number(MaterialsNames[index+1])+1;
-        }    
+        name.indexOf('ДВП') > -1 || name.indexOf('ХДФ') > -1 )
+            if (!isComposite(name)){
+                if (name.indexOf('\r')>-1) 
+                    name = name.replace('\r', ' ');
+                index = MaterialsNames.indexOf(name);
+                if (index == -1){
+                    MaterialsNames.push(name, 1);
+                } else
+                    if (Number(MaterialsNames[index+1]) > 0)
+                        MaterialsNames[index+1] = Number(MaterialsNames[index+1])+1;
+            }    
     });
     
     Sorted =[];
@@ -122,7 +125,19 @@ if (ModelMaterials.length > 0){
     system.writeTextFile('MaterialsNames.js', MaterialsNames + '"\n];');
 };
 
-Action.Hint = 'Выделено деталей' + Model.SelectionCount;
+today = new Date();
+curYear = today.toString().slice(13, 15);
+order = Action.ModelFilename;
+startIndex = order.lastIndexOf('\\') + 1;
+endIndex = order.lastIndexOf('.')
+order = order.slice(startIndex, endIndex);
+if (order.length > 2)
+    if ( order.slice(order.length-3, order.length) != ('.' + curYear) )
+        order = order + '.' + curYear;
+Article.OrderName = order;
+Article.Name = order;
+
+Action.Hint = 'Выделено деталей: ' + Model.SelectionCount;
 SetCamera(p3dIsometric);  //8
 Action.Control.ViewAll();
 Action.Continue();
