@@ -1,6 +1,7 @@
 ﻿if (!system.fileExists('MaterialsNames.js')) 
     system.writeTextFile('MaterialsNames.js', 'var MaterialsNames = [];');
-system.include('MaterialsNames.js')
+system.include('MaterialsNames.js');
+system.include('Specs.js');
 
 var OversizeDVPOm2 = false;
 var ModelMaterials =[];
@@ -55,7 +56,11 @@ Model.forEachPanel(function(obj) {
         obj.MaterialName.indexOf('(для приклейки)', 0) > -1)
             if (obj.Name.toLowerCase().indexOf('остаток') == -1)
                 obj.Selected = true;
-    
+
+    if ( (obj.MaterialName.substring(0, 10) == 'Столешница') &&
+            (obj.FindConnectedFasteners(obj).length > 0))
+            addMtrls.push(obj.MaterialName);
+
     if (obj.MaterialName.indexOf('ДВПО м2', 0) > -1 &&
         obj.MaterialName.indexOf('Белый', 0) > -1 &&
         (obj.ContourHeight > 800) && (obj.ContourWidth > 800))
@@ -136,6 +141,8 @@ if (order.length > 2)
         order = order + '.' + curYear;
 Article.OrderName = order;
 Article.Name = order;
+
+if ( Model.SelectionCount == 0 ) SelectSpecs(addMtrls);
 
 Action.Hint = 'Выделено деталей: ' + Model.SelectionCount;
 SetCamera(p3dIsometric);  //8
