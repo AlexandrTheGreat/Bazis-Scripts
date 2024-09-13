@@ -4,6 +4,10 @@ system.include('MaterialsNames.js');
 system.include('Specs.js');
 
 var OversizeDVPOm2 = false;
+var alerts = [];
+alertDVPOm2 = 'Детали ДВПО м² Белый больше 800 мм';
+alertFrontFace = 'Столешницы с неуказанной лицевой стороной';
+noFrontFace = [];
 var ModelMaterials =[];
 
 Model.forEachPanel(function(obj) {
@@ -49,22 +53,38 @@ Model.forEachPanel(function(obj) {
         obj.MaterialName.indexOf('Белый Метал', 0) > -1 ||
         obj.MaterialName.indexOf('Пластик', 0) > -1 ||
         obj.MaterialName.indexOf('с пленкой безопасности', 0) > -1 ||
-        obj.MaterialName.indexOf('метал', 0) > -1)
+        obj.MaterialName.indexOf('метал', 0) > -1 ||
+        obj.MaterialName.indexOf('Акрил ', 0) == 0 ||
+        obj.MaterialName.indexOf('ЗАМЕНИ ТКАНЬ', 0) == 0 ||
+        obj.MaterialName.indexOf('Металл,сталь', 0) == 0)
         obj.Selected = false;
 
-    if ((obj.MaterialName.substring(0, 10) == 'Столешница') ||
-        obj.MaterialName.indexOf('(для приклейки)', 0) > -1)
-            if (obj.Name.toLowerCase().indexOf('остаток') == -1)
-                obj.Selected = true;
+    if (obj.MaterialName.indexOf('(для приклейки)') > -1) obj.Selected = true;
 
-    if ( (obj.MaterialName.substring(0, 10) == 'Столешница') &&
-            (obj.FindConnectedFasteners(obj).length > 0))
+    if (obj.MaterialName.substring(0, 10) == 'Столешница'){
+
+        if ( (obj.Name.toLowerCase().indexOf('остаток') == -1) &&
+            (obj.Name.toLowerCase().indexOf('обрезок') == -1) ){
+                obj.Selected = true;
+                if (obj.FrontFace == 2){
+                    noFrontFace.push(obj);
+                    if (alerts.indexOf(alertFrontFace) == -1)
+                        alerts.push(alertFrontFace);
+                }
+
+            }
+
+        if (obj.FindConnectedFasteners(obj).length > 0)
             addMtrls.push(obj.MaterialName);
 
-    if (obj.MaterialName.indexOf('ДВПО м2', 0) > -1 &&
-        obj.MaterialName.indexOf('Белый', 0) > -1 &&
-        (obj.ContourHeight > 800) && (obj.ContourWidth > 800))
-            OversizeDVPOm2 = true;
+    }
+
+    if ( (obj.MaterialName.indexOf('ДВПО м2', 0) > -1) &&
+        (obj.MaterialName.indexOf('Белый', 0) > -1) &&
+        (obj.ContourHeight > 800) && (obj.ContourWidth > 800) )
+            if (alerts.indexOf(alertDVPOm2, 0) == -1) alerts.push(alertDVPOm2);
+
+
 
     //Выделение фурнитуры
     //if (obj.Selected) obj.FindConnectedFasteners(obj).forEach(furn => {
@@ -72,18 +92,29 @@ Model.forEachPanel(function(obj) {
         //});
 });
 
-if (OversizeDVPOm2){
-    Btn = NewButtonInput("Детали ДВПО м² Белый больше 800 мм");
-    Btn.OnChange = function(){
-        Model.Selected = false;
-        Model.forEachPanel(function(obj){
-            if (obj.MaterialName.indexOf('ДВПО м2', 0) > -1 &&
-            obj.MaterialName.indexOf('Белый', 0) > -1 &&
-            (obj.ContourHeight > 800) && (obj.ContourWidth > 800))
-                obj.Selected = true;
-        })
+if (alerts.length > 0){
+    if (alerts.indexOf(alertDVPOm2) > -1){
+        Btn = NewButtonInput(alertDVPOm2);
+        Btn.OnChange = function(){
+            Model.Selected = false;
+            Model.forEachPanel(function(obj){
+                if (obj.MaterialName.indexOf('ДВПО м2', 0) > -1 &&
+                obj.MaterialName.indexOf('Белый', 0) > -1 &&
+                (obj.ContourHeight > 800) && (obj.ContourWidth > 800))
+                    obj.Selected = true;
+            })
+        }
     }
-    alert('Детали ДВПО м² Белый больше 800 мм');
+
+    if (noFrontFace.length > 0){
+        BtnFrontFace = NewButtonInput(alertFrontFace);
+        BtnFrontFace.OnChange = function(){
+            Model.UnSelectAll();
+            noFrontFace.forEach(function(obj){ obj.Selected = true})
+        }
+    }
+
+    alert(alerts.join('\n'));
 };
 
 function isComposite(mtName){
@@ -124,8 +155,25 @@ if (ModelMaterials.length > 0){
         }
         Sorted.push(MaterialsNames[maxi], MaterialsNames[maxi+1]);
         MaterialsNames.splice(maxi, 2);
-    }
+        //if (Sorted.length > 3){
+          //  last = Sorted.length - 1;
+            //if (Number(Sorted[last-2]) > -3){
+              //  if (Sorted[last-2] > Sorted[last]){
+                //
+                  //  if (Sorted[last] == -2)
+                    //    Sorted.splice(last-1, 0, '/* Разносторонние материалы: */');
 
+                    //if (Sorted[last] == -1)
+                    //    Sorted.splice(last-1, 0, '/* Материалы с ориентированной текстурой: */');
+
+                    //if (Sorted[last] == 0)
+                   //     Sorted.splice(last-1, 0, '/* Материалы с ненаправленной текстурой: */');
+
+               // }
+         //   }
+        //}*/
+    }
+//    Sorted.slice(0, 0, '/* Новые материалы: */');
     MaterialsNames = 'var MaterialsNames = [\n"' + Sorted.join('", \n"');
     system.writeTextFile('MaterialsNames.js', MaterialsNames + '"\n];');
 };
@@ -142,9 +190,13 @@ if (order.length > 2)
 Article.OrderName = order;
 Article.Name = order;
 
-if ( Model.SelectionCount == 0 ) SelectSpecs(addMtrls);
+Action.Hint = 'Чертежи.';
+if ( Model.SelectionCount == 0 ){
+    SelectSpecs(addMtrls);
+    Action.Hint = 'Спецификации.';
+}
 
-Action.Hint = 'Выделено деталей: ' + Model.SelectionCount;
+Action.Hint = Action.Hint + ' Выделено деталей: ' + Model.SelectionCount;
 SetCamera(p3dIsometric);  //8
 Action.Control.ViewAll();
 Action.Continue();
