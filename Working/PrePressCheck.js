@@ -6,7 +6,7 @@ system.include('Specs.js');
 var OversizeDVPOm2 = false;
 var alerts = [];
 alertDVPOm2 = 'Детали ДВПО м² Белый больше 800 мм';
-alertFrontFace = 'Столешницы с неуказанной лицевой стороной';
+alertFrontFace = 'Не указана лицевая сторона';
 noFrontFace = [];
 var ModelMaterials =[];
 
@@ -17,8 +17,23 @@ Model.forEachPanel(function(obj) {
 
     mtName = obj.MaterialName.replace('\r', ' ');
     mtIndex = MaterialsNames.indexOf(mtName);
-    if ( mtIndex > -1) 
-        if (Number(MaterialsNames[mtIndex+1]) == 0) obj.TextureOrientation = 0;
+    if ( mtIndex > -1){
+
+        if ( (Number(MaterialsNames[mtIndex+1]) == 0) ||
+            (Number(MaterialsNames[mtIndex+1]) == -10) )
+                obj.TextureOrientation = 0;
+
+        if ( (Number(MaterialsNames[mtIndex+1]) == -10) ||
+            (Number(MaterialsNames[mtIndex+1]) == -11) )
+            if ((obj.FrontFace == 2) &&
+                (obj.FindConnectedFasteners(obj).length > 0)){
+                noFrontFace.push(obj);
+                if (alerts.indexOf(alertFrontFace) == -1)
+                    alerts.push(alertFrontFace);
+            }
+
+
+    }
 
     if (obj.Name.indexOf("О", 0) > -1) 
         obj.Name = obj.Name.toLowerCase();
@@ -153,34 +168,38 @@ if (ModelMaterials.length > 0){
                 maxi = i;
             }
         }
-        Sorted.push(MaterialsNames[maxi], MaterialsNames[maxi+1]);
+        Sorted.push('"'+MaterialsNames[maxi]+'", \n', '"'+MaterialsNames[maxi+1]+'", \n');
         MaterialsNames.splice(maxi, 2);
-        //if (Sorted.length > 3){
-          //  last = Sorted.length - 1;
-            //if (Number(Sorted[last-2]) > -3){
-              //  if (Sorted[last-2] > Sorted[last]){
-                //
-                  //  if (Sorted[last] == -2)
-                    //    Sorted.splice(last-1, 0, '/* Разносторонние материалы: */');
+        if (Sorted.length > 2){
+            last = Sorted.length - 1;
+            if (Number(Sorted[last-2].slice(1,-4)) > -12){
+                if (Number(Sorted[last-2].slice(1,-4)) > Number(Sorted[last].slice(1,-4))){
 
-                    //if (Sorted[last] == -1)
-                    //    Sorted.splice(last-1, 0, '/* Материалы с ориентированной текстурой: */');
+                    if (Number(Sorted[last].slice(1,-4)) == -11)
+                        Sorted.splice(last-1, 0, '\n/* Разносторонние материалы с ориентированной текстурой: */ \n');
 
-                    //if (Sorted[last] == 0)
-                   //     Sorted.splice(last-1, 0, '/* Материалы с ненаправленной текстурой: */');
+                    if (Number(Sorted[last].slice(1,-4)) == -10)
+                        Sorted.splice(last-1, 0, '\n/* Разносторонние материалы с ненаправленной текстурой: */ \n');
 
-               // }
-         //   }
-        //}*/
+                    if (Number(Sorted[last].slice(1,-4)) == -1)
+                        Sorted.splice(last-1, 0, '\n/* Материалы с ориентированной текстурой: */ \n');
+
+                    if (Number(Sorted[last].slice(1,-4)) == 0)
+                        Sorted.splice(last-1, 0, '\n/* Материалы с ненаправленной текстурой: */ \n');
+
+                }
+            }
+        }
     }
-//    Sorted.slice(0, 0, '/* Новые материалы: */');
-    MaterialsNames = 'var MaterialsNames = [\n"' + Sorted.join('", \n"');
+    Sorted.splice(0, 0, '\n/* Новые материалы: */ \n');
+    MaterialsNames = 'var MaterialsNames = [\n' + Sorted.join('').slice(0, -4);
     system.writeTextFile('MaterialsNames.js', MaterialsNames + '"\n];');
 };
 
 today = new Date();
 curYear = today.toString().slice(13, 15);
 order = Action.ModelFilename;
+order = order.slice(0, order.lastIndexOf('\\\\')-1);
 startIndex = order.lastIndexOf('\\') + 1;
 endIndex = order.lastIndexOf('.')
 order = order.slice(startIndex, endIndex);
